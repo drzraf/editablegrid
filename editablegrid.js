@@ -1,5 +1,5 @@
 if (typeof _$ == 'undefined') {
-	function _$(elementId) { return document.getElementById(elementId); }
+    	function _$(elementId) { return document.getElementById(elementId); }
 }
 
 /**
@@ -332,7 +332,7 @@ EditableGrid.prototype.processXML = function()
 					name: col.getAttribute("name"),
 					label: (typeof col.getAttribute("label") == 'string' ? col.getAttribute("label") : col.getAttribute("name")),
 					datatype: (col.getAttribute("datatype") ? col.getAttribute("datatype") : "string"),
-					editable: col.getAttribute("editable") == "true",
+				    editable: col.getAttribute("editable") == "true" || col.getAttribute("editable") == "1",
 					bar: (col.getAttribute("bar") ? col.getAttribute("bar") == "true" : true),
 					optionValues: optionValues
 				}));

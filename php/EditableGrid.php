@@ -1,5 +1,7 @@
 <?php
 
+define('EG_EDIT', 0x00001);
+
 class EditableGrid {
 
 	protected $columns;
@@ -36,9 +38,11 @@ class EditableGrid {
 		return $labels;
 	}
 
-	public function addColumn($name, $label, $type, $values = NULL, $editable = true, $field = NULL, $bar = true)
+	public function addColumn($name, $label, $type, $values = NULL, $flags = EG_EDIT, $field = NULL, $bar = true)
 	{
-		$this->columns[$name] = array("field" => $field ? $field : $name, "label" => $label, "type" => $type, "editable" => $editable, "bar" => $bar, "values" => $values );
+		$this->columns[$name] = array("field" => $field ? $field : $name, "label" => $label, "type" => $type,
+					      "flags" => $flags,
+					      "bar" => $bar, "values" => $values );
 	}
 
 	public function setPaginator($pageCount, $totalRowCount, $unfilteredRowCount)
@@ -66,7 +70,7 @@ class EditableGrid {
 			$xml.= "<metadata>\n";
 			foreach ($this->columns as $name => $info) {
 				$label = self::escapeXML(@iconv($this->encoding, $this->encoding."//IGNORE", $info['label']));
-				$xml.= "<column name='$name' label='$label' datatype='{$info['type']}'". ($info['bar'] ? "" : " bar='false'") . " editable='". ($info['editable'] ? "true" : "false") . "'>\n";
+				$xml.= "<column name='$name' label='$label' datatype='{$info['type']}'". ($info['bar'] ? "" : " bar='false'") . " editable='". ($info['flags'] & EG_EDIT) . "'>\n";
 				if (is_array($info['values'])) {
 					$xml.= "<values>\n";
 					foreach ($info['values'] as $key => $value) {
@@ -140,7 +144,7 @@ class EditableGrid {
 				"label" => @iconv($this->encoding, $this->encoding."//IGNORE", $info['label']),
 				"datatype" => $info['type'],
 				"bar" => $info['bar'],
-				"editable" => $info['editable'],
+				"editable" => $info['flags'] & EG_EDIT,
 				"values" => $info['values']
 				);
 			}
