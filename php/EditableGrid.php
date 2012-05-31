@@ -1,6 +1,7 @@
 <?php
 
 define('EG_EDIT', 0x00001);
+define('EG_HIDE', 0x00002);
 
 class EditableGrid {
 
@@ -40,6 +41,10 @@ class EditableGrid {
 
 	public function addColumn($name, $label, $type, $values = NULL, $flags = EG_EDIT, $field = NULL, $bar = true)
 	{
+	  // hide takes precedence over edit
+	  if($flags & EG_EDIT && $flags & EG_HIDE)
+	    $flags ^= EG_EDIT;
+
 		$this->columns[$name] = array("field" => $field ? $field : $name, "label" => $label, "type" => $type,
 					      "flags" => $flags,
 					      "bar" => $bar, "values" => $values );
@@ -70,7 +75,14 @@ class EditableGrid {
 			$xml.= "<metadata>\n";
 			foreach ($this->columns as $name => $info) {
 				$label = self::escapeXML(@iconv($this->encoding, $this->encoding."//IGNORE", $info['label']));
-				$xml.= "<column name='$name' label='$label' datatype='{$info['type']}'". ($info['bar'] ? "" : " bar='false'") . " editable='". ($info['flags'] & EG_EDIT) . "'>\n";
+				$xml.= sprintf('<column name="%s" label="%s" datatype="%s" editable="%d" hidden="%d" %s>' . "\n",
+					       $name,
+					       $label,
+					       $info['type'],
+					       ($info['flags'] & EG_EDIT) > 0,
+					       ($info['flags'] & EG_HIDE) > 0,
+					       $info['bar'] ? '' : 'bar="false"');
+
 				if (is_array($info['values'])) {
 					$xml.= "<values>\n";
 					foreach ($info['values'] as $key => $value) {
@@ -144,7 +156,8 @@ class EditableGrid {
 				"label" => @iconv($this->encoding, $this->encoding."//IGNORE", $info['label']),
 				"datatype" => $info['type'],
 				"bar" => $info['bar'],
-				"editable" => $info['flags'] & EG_EDIT,
+				"editable" => ($info['flags'] & EG_EDIT) > 0,
+				"hidden" => ($info['flags'] & EG_HIDE) > 0,
 				"values" => $info['values']
 				);
 			}
