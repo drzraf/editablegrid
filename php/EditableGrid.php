@@ -196,7 +196,9 @@ class EditableGrid {
 	public function renderJSON($rows=false, $customRowAttributes=false, $encodeCustomAttributes=false, $includeMetadata=true)
 	{
 		header('Content-Type: text/json');
-		echo $this->getJSON($rows, $customRowAttributes, $encodeCustomAttributes, $includeMetadata);
+		$f = $this->getJSON($rows, $customRowAttributes, $encodeCustomAttributes, $includeMetadata);
+		header('Content-Length: ' . strlen($f));
+		echo $f;
 	}
 
 	public static function parseInt($string) {
