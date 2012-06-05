@@ -50,6 +50,13 @@ class EditableGrid {
 					      "bar" => $bar, "values" => $values );
 	}
 
+	/**
+	 * 
+	 * Set parameters needed for server-side pagination
+	 * @param integer $pageCount number of pages
+	 * @param integer $totalRowCount total numer of rows in all pages
+	 * @param integer $unfilteredRowCount total number of rows, not taking the filter into account
+	 */
 	public function setPaginator($pageCount, $totalRowCount, $unfilteredRowCount)
 	{
 		$this->pageCount = $pageCount;
