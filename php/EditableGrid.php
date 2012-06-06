@@ -52,7 +52,7 @@ class EditableGrid {
 
 	/**
 	 * 
-	 * Set parameters needed for server-side pagination
+	 * Set parameters needed for server-side pagination (supported only with JSON)
 	 * @param integer $pageCount number of pages
 	 * @param integer $totalRowCount total numer of rows in all pages
 	 * @param integer $unfilteredRowCount total number of rows, not taking the filter into account
