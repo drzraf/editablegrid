@@ -1432,6 +1432,34 @@ EditableGrid.prototype.getCellY = function(oElement)
 };
 
 /**
+ * Get X scroll offset relative to the first non static offset parent
+ * @private
+ */
+EditableGrid.prototype.getScrollXOffset = function(oElement)
+{
+	var iReturnValue = 0;
+	while (oElement != null && typeof oElement.scrollLeft != 'undefined' && this.isStatic(oElement)) try {
+		iReturnValue += parseInt(oElement.scrollLeft);
+		oElement = oElement.parentNode;
+	} catch(err) { oElement = null; }
+	return iReturnValue;
+};
+
+/**
+ * Get Y scroll offset relative to the first non static offset parent
+ * @private
+ */
+EditableGrid.prototype.getScrollYOffset = function(oElement)
+{
+	var iReturnValue = 0;
+	while (oElement != null && typeof oElement.scrollTop != 'undefined' && this.isStatic(oElement)) try {
+		iReturnValue += parseInt(oElement.scrollTop);
+		oElement = oElement.parentNode;
+	} catch(err) { oElement = null; }
+	return iReturnValue;
+};
+
+/**
  * Private
  * @param containerid
  * @param className
@@ -1477,12 +1505,13 @@ EditableGrid.prototype._rendergrid = function(containerid, className, tableid)
 					}
 					else {
 						displayed++;
-						var rowData = [];
 						var cols = rows[i].cells;
 						if (typeof rows[i].hidden_by_editablegrid != 'undefined' && rows[i].hidden_by_editablegrid) {
 							rows[i].style.display = '';
 							rows[i].hidden_by_editablegrid = false;
 						}
+						rows[i].rowId = getRowId(rowIndex);
+						rows[i].id = _getRowDOMId(rows[i].rowId);
 						for (var j = 0; j < cols.length && j < columns.length; j++) 
 							if (columns[j].renderable) columns[j].cellRenderer._render(rowIndex, j, cols[j], getValueAt(rowIndex,j));
 					}
