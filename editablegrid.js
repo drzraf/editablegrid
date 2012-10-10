@@ -341,6 +341,14 @@ EditableGrid.prototype.processXML = function()
 			// process columns
 			processColumns();
 		}
+	
+		// load server-side pagination data
+		var paginator = xmlDoc.getElementsByTagName("paginator");
+		if (paginator && paginator.length >= 1) {
+			this.pageCount = paginator[0].getAttribute('pagecount');
+			this.totalRowCount = paginator[0].getAttribute('totalrowcount');
+			this.unfilteredRowCount = paginator[0].getAttribute('unfilteredrowcount');
+		}
 
 		// if no row id is provided, we create one since we need one
 		var defaultRowId = 1;
@@ -583,6 +591,14 @@ EditableGrid.prototype.processColumns = function()
 
 EditableGrid.prototype.parseColumnType = function(column)
 {
+	// reset
+	column.unit = null;
+	column.precision = -1;
+	column.decimal_point = ',';
+	column.thousands_separator = '.';
+	column.unit_before_number = false;
+	column.nansymbol = '';
+
 	// extract precision, unit and number format from type if 6 given
 	if (column.datatype.match(/(.*)\((.*),(.*),(.*),(.*),(.*),(.*)\)$/)) {
 		column.datatype = RegExp.$1;
@@ -1179,7 +1195,7 @@ EditableGrid.prototype._insert = function(rowIndex, offset, rowId, cellValues, r
 
 	// build data for new row
 	var rowData = { visible: true, originalIndex: originalIndex, id: rowId };
-	if (rowAttributes) for (var attributeName in rowAttributes) rowData[attributeName] = rowAttributes[attrName]; 
+	if (rowAttributes) for (var attributeName in rowAttributes) rowData[attributeName] = rowAttributes[attributeName]; 
 	rowData.columns = [];
 	for (var c = 0; c < this.columns.length; c++) {
 		var cellValue = this.columns[c].name in cellValues ? cellValues[this.columns[c].name] : "";
@@ -1329,11 +1345,18 @@ EditableGrid.prototype.setEnumProvider = function(columnIndexOrName, enumProvide
 {
 	var columnIndex = this.getColumnIndex(columnIndexOrName);
 	if (columnIndex < 0) alert("[setEnumProvider] Invalid column: " + columnIndexOrName);
-	else this.columns[columnIndex].enumProvider = enumProvider;
+	else {
+		var hadProviderAlready = this.columns[columnIndex].enumProvider != null;
+		this.columns[columnIndex].enumProvider = enumProvider;
 
-	// we must recreate the cell renderer and editor for this column
-	this._createCellRenderer(this.columns[columnIndex]);
-	this._createCellEditor(this.columns[columnIndex]);
+		// if needed, we recreate the cell renderer and editor for this column
+		// if the column had an enum provider already, the render/editor previously created by default is ok already
+		// ... and we don't want to erase a custom renderer/editor that may have been set before calling setEnumProvider
+		if (!hadProviderAlready) {
+			this._createCellRenderer(this.columns[columnIndex]);
+			this._createCellEditor(this.columns[columnIndex]);
+		}
+	}
 };
 
 /**
@@ -1438,7 +1461,7 @@ EditableGrid.prototype.getCellY = function(oElement)
 EditableGrid.prototype.getScrollXOffset = function(oElement)
 {
 	var iReturnValue = 0;
-	while (oElement != null && typeof oElement.scrollLeft != 'undefined' && this.isStatic(oElement)) try {
+	while (oElement != null && typeof oElement.scrollLeft != 'undefined' && this.isStatic(oElement) && oElement != document.body) try {
 		iReturnValue += parseInt(oElement.scrollLeft);
 		oElement = oElement.parentNode;
 	} catch(err) { oElement = null; }
@@ -1452,7 +1475,7 @@ EditableGrid.prototype.getScrollXOffset = function(oElement)
 EditableGrid.prototype.getScrollYOffset = function(oElement)
 {
 	var iReturnValue = 0;
-	while (oElement != null && typeof oElement.scrollTop != 'undefined' && this.isStatic(oElement)) try {
+	while (oElement != null && typeof oElement.scrollTop != 'undefined' && this.isStatic(oElement) && oElement != document.body) try {
 		iReturnValue += parseInt(oElement.scrollTop);
 		oElement = oElement.parentNode;
 	} catch(err) { oElement = null; }
@@ -1470,6 +1493,7 @@ EditableGrid.prototype._rendergrid = function(containerid, className, tableid)
 {
 	with (this) {
 
+		lastSelectedRowIndex = -1;
 		_currentPageIndex = getCurrentPageIndex();
 					
 		// if we are already attached to an existing table, just update the cell contents
