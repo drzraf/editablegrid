@@ -9,7 +9,6 @@ define('EG_COLNAME',	0x00002);
 class EditableGrid {
 
   protected $columns;
-  protected $encoding;
 
   /* any of:
    * EG_PRETTY: pretty print (= format) JSON or XML output
@@ -20,8 +19,7 @@ class EditableGrid {
   protected $totalRowCount;
   protected $unfilteredRowCount;
 
-  function __construct($encoding = "utf-8", $flags = 0) {
-    $this->encoding = $encoding;
+  function __construct($flags = 0) {
     $this->columns = array();
     $this->flags = $flags;
     $this->pageCount = null;
