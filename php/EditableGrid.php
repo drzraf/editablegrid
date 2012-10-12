@@ -207,7 +207,9 @@ class EditableGrid {
       }
     }
 
-    return json_encode($results); //  JSON_UNESCAPED_UNICODE ?
+    //  JSON_UNESCAPED_UNICODE ?
+    return json_encode($results,
+		       (($this->flags & EG_PRETTY) > 0) ? JSON_PRETTY_PRINT : 0);
   }
 
   private function getRowJSON($row,
