@@ -3,21 +3,27 @@
 define('EG_EDIT', 0x00001);
 define('EG_HIDE', 0x00002);
 
+define('EG_PRETTY',	0x00001);
+define('EG_COLNAME',	0x00002);
+
 class EditableGrid {
 
   protected $columns;
   protected $encoding;
-  protected $writeColumnNames; // write column names in XML and JSON (set to false to save bandwidth)
-  protected $formatXML;
+
+  /* any of:
+   * EG_PRETTY: pretty print (= format) JSON or XML output
+   * EG_COLNAME: write column names in XML and JSON (set to false to save bandwidth)
+   */
+  protected $flags;
   protected $pageCount;
   protected $totalRowCount;
   protected $unfilteredRowCount;
 
-  function __construct($encoding = "utf-8", $writeColumnNames = false, $formatXML = false) {
+  function __construct($encoding = "utf-8", $flags = 0) {
     $this->encoding = $encoding;
     $this->columns = array();
-    $this->writeColumnNames = $writeColumnNames;
-    $this->formatXML = $formatXML;
+    $this->flags = $flags;
     $this->pageCount = null;
     $this->totalRowCount = null;
     $this->unfilteredRowCount = null;
@@ -66,7 +72,7 @@ class EditableGrid {
 			 $encodeCustomAttributes=false, $includeMetadata=true) {
     // document and root table node
     $DOMDocument = new DOMDocument('1.0', $this->encoding);
-    $DOMDocument->formatOutput = $this->formatXML;
+    $DOMDocument->formatOutput = (($this->flags & EG_PRETTY) > 0);
     $DOMDocument->appendChild($rootNode = $DOMDocument->createElement('table'));
 
     if ($includeMetadata) {
@@ -140,7 +146,8 @@ class EditableGrid {
     foreach ($this->columns as $name => $info) {
       $field = $info['field'];
       $rowNode->appendChild($columnNode = $DOMDocument->createElement('column'));
-      if ($this->writeColumnNames) $columnNode->setAttribute('name', $name);
+      if (($this->flags & EG_COLNAME) > 0)
+	$columnNode->setAttribute('name', $name);
       $columnNode->appendChild($DOMDocument->createCDATASection($this->_getRowField($row, $field)));
     }
 
@@ -218,7 +225,7 @@ class EditableGrid {
 			
     foreach ($this->columns as $name => $info) {
       $field = $info['field'];
-      if ($this->writeColumnNames)
+      if (($this->flags & EG_COLNAME) > 0)
 	$data["values"][$name] = $this->_getRowField($row, $field);
       else
 	$data["values"][] = $this->_getRowField($row, $field);
