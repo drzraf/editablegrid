@@ -57,12 +57,9 @@ class EditableGrid {
   }
 
   private function _getRowField($row, $field) {
-    $value = is_array($row)
+    return is_array($row)
       ? (isset($row[$field]) ? $row[$field] : '')
       : (isset($row->$field) ? $row->$field : '');
-
-    // to avoid any issue with javascript not able to parse XML, ensure data is valid for encoding
-    return @iconv($this->encoding, $this->encoding."//IGNORE", $value);
   }
 
   public function getXML($rows=false, $customRowAttributes=false,
@@ -80,7 +77,7 @@ class EditableGrid {
 	// column with attributes
 	$metadataNode->appendChild($columnNode = $DOMDocument->createElement('column'));
 	$columnNode->setAttribute('name', $name);
-	$columnNode->setAttribute('label', @iconv($this->encoding, $this->encoding."//IGNORE", $info['label']));
+	$columnNode->setAttribute('label', $info['label']);
 	$columnNode->setAttribute('datatype', $info['type']);
 	if (!$info['bar']) $columnNode->setAttribute('bar', 'false');
 	$columnNode->setAttribute('editable', (int)(($info['flags'] & EG_EDIT) > 0));
@@ -93,20 +90,20 @@ class EditableGrid {
 	    if (is_array($value)) {
 	      // group with attribute and content
 	      $valuesNode->appendChild($groupNode = $DOMDocument->createElement('group'));
-	      $groupNode->setAttribute('label', @iconv($this->encoding, $this->encoding."//IGNORE", $key));
+	      $groupNode->setAttribute('label', $key);
 	      $values = $value;
 	      foreach ($values as $key => $value) {
 		// value with attribute and content
 		$groupNode->appendChild($valueNode = $DOMDocument->createElement('value'));
 		$valueNode->setAttribute('value', $key);
-		$valueNode->appendChild($DOMDocument->createCDATASection(@iconv($this->encoding, $this->encoding."//IGNORE", $value)));
+		$valueNode->appendChild($DOMDocument->createCDATASection($value));
 	      }
 	    }
 	    else {
 	      // value with attribute and content
 	      $valuesNode->appendChild($valueNode = $DOMDocument->createElement('value'));
 	      $valueNode->setAttribute('value', $key);
-	      $valueNode->appendChild($DOMDocument->createCDATASection(@iconv($this->encoding, $this->encoding."//IGNORE", $value)));
+	      $valueNode->appendChild($DOMDocument->createCDATASection($value));
 	    }
 	  }
 	}
@@ -167,7 +164,7 @@ class EditableGrid {
       foreach ($this->columns as $name => $info) {
 	$results['metadata'][] = array(
 	  "name" => $name,
-	  "label" => @iconv($this->encoding, $this->encoding."//IGNORE", $info['label']),
+	  "label" => $info['label'],
 	  "datatype" => $info['type'],
 	  "bar" => $info['bar'],
 	  'editable' => (int)($info['flags'] & EG_EDIT),
@@ -205,7 +202,7 @@ class EditableGrid {
       }
     }
 
-    return json_encode($results);
+    return json_encode($results); //  JSON_UNESCAPED_UNICODE ?
   }
 
   private function getRowJSON($row,
@@ -232,8 +229,14 @@ class EditableGrid {
 
   public function renderJSON($rows=false, $customRowAttributes=false,
 			     $encodeCustomAttributes=false, $includeMetadata=true) {
+    $ret = $this->getJSON($rows, $customRowAttributes, $encodeCustomAttributes, $includeMetadata);
+    if(json_last_error() != JSON_ERROR_NONE) {
+      header('Content-Type: text/plain');
+      print 'JSON error: ' . json_last_error();
+      exit;
+    }
     header('Content-Type: text/json');
-    echo $this->getJSON($rows, $customRowAttributes, $encodeCustomAttributes, $includeMetadata);
+    print $ret;
   }
 
   public static function parseInt($string) {
@@ -360,7 +363,7 @@ class EditableGrid {
     }
 
     // TODO: can't find how to use UTF8 into XLS number formats (for chinese currency symbol etc.)
-    $unit = $info['unit'] ? ($info['unit'] == '€' ? chr(128) : str_replace('?', '', @iconv($encoding, "latin1//TRANSLIT", $info['unit']))) : '';
+    $unit = $info['unit'] ? ($info['unit'] == '€' ? chr(128) : str_replace('?', '', iconv($encoding, "latin1//TRANSLIT", $info['unit']))) : '';
     $before =  $unit && $info['unit_before_number'] ? "\"$unit \"" : '';
     $after = $unit && $info['unit_before_number'] ? '' : "\" $unit\"";
 
